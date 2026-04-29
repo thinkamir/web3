@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/Card';
+import { Header } from '@/components/Header';
 
 const mockDraws = [
   { id: '1', title: 'NFT Giveaway', description: 'Win exclusive NFT', prize: '500 USDC', progress: 65, tickets: 1234, target: 2000, status: 'open' },
@@ -20,25 +21,8 @@ export default function DrawsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <header className="border-b border-gray-800">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-cyan-600 rounded-lg flex items-center justify-center">
-              <span className="font-bold">A</span>
-            </div>
-            <span className="text-xl font-bold">AlphaQuest</span>
-          </div>
-          <nav className="flex items-center gap-6">
-            <a href="/" className="text-gray-400 hover:text-white">Home</a>
-            <a href="/tasks" className="text-gray-400 hover:text-white">Tasks</a>
-            <a href="/draws" className="text-white font-medium">Draws</a>
-            <a href="/profile" className="text-gray-400 hover:text-white">Profile</a>
-          </nav>
-          <Button>Connect Wallet</Button>
-        </div>
-      </header>
-
+    <>
+      <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
           <h1 className="text-2xl font-bold">Active Draws</h1>
@@ -101,6 +85,6 @@ export default function DrawsPage() {
           </div>
         )}
       </main>
-    </div>
+    </>
   );
 }

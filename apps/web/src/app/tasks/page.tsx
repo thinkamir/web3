@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/Card';
 import { Input } from '@/components/Input';
+import { Header } from '@/components/Header';
 
 const mockTasks = [
   { id: '1', title: 'Daily Sign-in', description: 'Sign in to earn points', points: 10, type: 'signin', participants: 1234 },
@@ -12,12 +13,6 @@ const mockTasks = [
   { id: '4', title: 'Complete Quiz', description: 'Answer quiz questions', points: 30, type: 'quiz', participants: 321 },
   { id: '5', title: 'On-chain Swap', description: 'Complete a swap transaction', points: 200, type: 'onchain', participants: 156 },
   { id: '6', title: 'Submit Feedback', description: 'Submit project feedback', points: 50, type: 'manual', participants: 89 },
-];
-
-const mockProjects = [
-  { id: '1', name: 'DeFi Swap', logo: 'D', tasks: 12 },
-  { id: '2', name: 'NFT Market', logo: 'N', tasks: 8 },
-  { id: '3', name: 'Layer2', logo: 'L', tasks: 15 },
 ];
 
 export default function TasksPage() {
@@ -31,25 +26,8 @@ export default function TasksPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <header className="border-b border-gray-800">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-cyan-600 rounded-lg flex items-center justify-center">
-              <span className="font-bold">A</span>
-            </div>
-            <span className="text-xl font-bold">AlphaQuest</span>
-          </div>
-          <nav className="flex items-center gap-6">
-            <a href="/" className="text-gray-400 hover:text-white">Home</a>
-            <a href="/tasks" className="text-white font-medium">Tasks</a>
-            <a href="/draws" className="text-gray-400 hover:text-white">Draws</a>
-            <a href="/profile" className="text-gray-400 hover:text-white">Profile</a>
-          </nav>
-          <Button>Connect Wallet</Button>
-        </div>
-      </header>
-
+    <>
+      <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="flex-1">
@@ -102,6 +80,6 @@ export default function TasksPage() {
           </div>
         )}
       </main>
-    </div>
+    </>
   );
 }

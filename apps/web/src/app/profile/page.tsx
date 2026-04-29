@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/Card';
 import { Input } from '@/components/Input';
+import { Header } from '@/components/Header';
 
 const mockUser = {
   wallet: '0x1234...5678',
@@ -36,25 +37,8 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <header className="border-b border-gray-800">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-cyan-600 rounded-lg flex items-center justify-center">
-              <span className="font-bold">A</span>
-            </div>
-            <span className="text-xl font-bold">AlphaQuest</span>
-          </div>
-          <nav className="flex items-center gap-6">
-            <a href="/" className="text-gray-400 hover:text-white">Home</a>
-            <a href="/tasks" className="text-gray-400 hover:text-white">Tasks</a>
-            <a href="/draws" className="text-gray-400 hover:text-white">Draws</a>
-            <a href="/profile" className="text-white font-medium">Profile</a>
-          </nav>
-          <Button>Connected</Button>
-        </div>
-      </header>
-
+    <>
+      <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
@@ -165,6 +149,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </main>
-    </div>
+    </>
   );
 }
