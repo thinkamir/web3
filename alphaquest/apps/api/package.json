@@ -1,0 +1,10 @@
+{
+  "name": "@alphaquest/api",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "echo \"api dev placeholder\"",
+    "build": "echo \"api build placeholder\"",
+    "test": "echo \"api test placeholder\""
+  }
+}

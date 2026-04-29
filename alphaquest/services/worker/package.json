@@ -1,0 +1,9 @@
+{
+  "name": "@alphaquest/service-worker",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "start": "echo \"worker start placeholder\"",
+    "test": "echo \"worker test placeholder\""
+  }
+}
