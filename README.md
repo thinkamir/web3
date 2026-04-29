@@ -80,3 +80,7 @@ forge test
 ## Codex Workflow
 
 Read `AGENTS.md` first. Then open the relevant file under `docs/codex/tasks/` and run each task as a focused Codex job.
+
+
+Seed task packs:
+- `docs/codex/tasks/agent-5-7-10-backend.md`
