@@ -1,0 +1,11 @@
+{
+  "name": "@alphaquest/packages-types",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo 'lint packages/types'",
+    "typecheck": "echo 'typecheck packages/types'",
+    "test": "echo 'test packages/types'"
+  }
+}

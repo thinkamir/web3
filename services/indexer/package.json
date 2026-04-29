@@ -1,0 +1,11 @@
+{
+  "name": "@alphaquest/services-indexer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo 'lint services/indexer'",
+    "typecheck": "echo 'typecheck services/indexer'",
+    "test": "echo 'test services/indexer'"
+  }
+}

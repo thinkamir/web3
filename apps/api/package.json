@@ -1,0 +1,11 @@
+{
+  "name": "@alphaquest/apps-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo 'lint apps/api'",
+    "typecheck": "echo 'typecheck apps/api'",
+    "test": "echo 'test apps/api'"
+  }
+}

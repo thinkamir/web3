@@ -1,0 +1,11 @@
+{
+  "name": "@alphaquest/services-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo 'lint services/worker'",
+    "typecheck": "echo 'typecheck services/worker'",
+    "test": "echo 'test services/worker'"
+  }
+}

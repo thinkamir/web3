@@ -1,0 +1,11 @@
+{
+  "name": "@alphaquest/services-risk-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo 'lint services/risk-engine'",
+    "typecheck": "echo 'typecheck services/risk-engine'",
+    "test": "echo 'test services/risk-engine'"
+  }
+}
