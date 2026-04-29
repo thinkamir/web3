@@ -1,0 +1,11 @@
+{
+  "name": "@alphaquest/apps-admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo 'lint apps/admin'",
+    "typecheck": "echo 'typecheck apps/admin'",
+    "test": "echo 'test apps/admin'"
+  }
+}

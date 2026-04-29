@@ -1,0 +1,11 @@
+{
+  "name": "@alphaquest/apps-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo 'lint apps/dashboard'",
+    "typecheck": "echo 'typecheck apps/dashboard'",
+    "test": "echo 'test apps/dashboard'"
+  }
+}

@@ -131,3 +131,16 @@ Each PR must include:
 - [ ] Authorization checked
 - [ ] Audit logs added where needed
 ```
+
+---
+
+## Repository Bootstrap Status
+
+This repository is now initialized with:
+
+- `pnpm-workspace.yaml` workspace roots: `apps/*`, `packages/*`, `services/*`.
+- Base package manifests for apps, packages, and services.
+- `contracts/` Foundry workspace with a sample contract and test.
+- `docs/architecture/monorepo.md` bootstrap and onboarding notes.
+
+When adding new modules, keep each unit independently lint/typecheck/test scriptable so root `pnpm -r` commands remain predictable.
