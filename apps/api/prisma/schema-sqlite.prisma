@@ -1,0 +1,268 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  wallet        String    @unique
+  username      String?
+  avatar        String?
+  email         String?
+  twitter       String?
+  telegram      String?
+  discord       String?
+  referral_code String    @unique
+  inviter_id    String?
+  user_level    Int       @default(1)
+  risk_score    Int       @default(0)
+  status        String    @default("active")
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  point_transactions PointTransaction[]
+  task_submissions   TaskSubmission[]
+  draw_entries       DrawEntry[]
+  draw_claims        DrawClaim[]
+  referrals          Referral[]
+  api_keys           ApiKey[]
+  project_members    ProjectMember[]
+}
+
+model Project {
+  id                   String   @id @default(uuid())
+  name                 String
+  website              String?
+  logo                 String?
+  description          String?
+  owner_user_id        String
+  verification_status String   @default("pending")
+  risk_level          String   @default("low")
+  twitter              String?
+  telegram             String?
+  discord              String?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  campaigns       Campaign[]
+  project_members ProjectMember[]
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  project_id String
+  project    Project  @relation(fields: [project_id], references: [id])
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  role       String
+  created_at DateTime @default(now())
+
+  @@unique([project_id, user_id])
+}
+
+model Campaign {
+  id            String   @id @default(uuid())
+  project_id    String
+  project       Project  @relation(fields: [project_id], references: [id])
+  title         String
+  description   String
+  status        String   @default("draft")
+  start_time    DateTime
+  end_time      DateTime
+  region_restriction String @default("[]")
+  risk_level    String   @default("low")
+  reward_config String   @default("{}")
+  risk_config   String   @default("{}")
+  terms         String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  tasks Task[]
+  draws Draw[]
+
+  @@index([project_id])
+}
+
+model Task {
+  id                 String   @id @default(uuid())
+  campaign_id        String
+  campaign           Campaign @relation(fields: [campaign_id], references: [id])
+  type               String
+  title              String
+  description        String
+  reward_points      Int      @default(0)
+  verification_type  String
+  requirements       String   @default("{}")
+  max_completions    Int?
+  per_user_limit     Int      @default(1)
+  start_time         DateTime?
+  end_time           DateTime?
+  status             String   @default("available")
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  submissions TaskSubmission[]
+
+  @@index([campaign_id])
+}
+
+model TaskSubmission {
+  id          String    @id @default(uuid())
+  task_id     String
+  task        Task      @relation(fields: [task_id], references: [id])
+  user_id     String
+  user        User      @relation(fields: [user_id], references: [id])
+  status      String    @default("pending_review")
+  proof       String?
+  review_note String?
+  reviewed_by String?
+  reviewed_at DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  @@unique([task_id, user_id])
+}
+
+model PointTransaction {
+  id            String   @id @default(uuid())
+  user_id      String
+  user         User     @relation(fields: [user_id], references: [id])
+  amount       Int
+  direction    String
+  point_type   String   @default("earned")
+  status       String   @default("available")
+  source_type  String
+  source_id    String?
+  balance_after Int     @db.Integer
+  risk_score   Int?
+  created_at   DateTime @default(now())
+  confirmed_at DateTime?
+
+  @@index([user_id])
+}
+
+model Referral {
+  id            String   @id @default(uuid())
+  referrer_id   String
+  referrer      User     @relation(fields: [referrer_id], references: [id])
+  invitee_id    String
+  invitee       User     @relation(fields: [invitee_id], references: [id])
+  referral_type String
+  reward_amount Int      @default(0)
+  status        String   @default("pending")
+  created_at    DateTime @default(now())
+  confirmed_at  DateTime?
+
+  @@unique([invitee_id, referral_type])
+}
+
+model Draw {
+  id                 String   @id @default(uuid())
+  campaign_id        String
+  campaign           Campaign @relation(fields: [campaign_id], references: [id])
+  title              String
+  description        String
+  type               String   @default("points_lottery")
+  status             String   @default("draft")
+  prize_description  String
+  prize_amount       Int      @default(0)
+  prize_contract     String?
+  prize_token_id     String?
+  target_points      Int      @default(0)
+  max_per_user       Int      @default(1)
+  points_per_ticket  Int      @default(1)
+  free_entry_enabled Boolean  @default(false)
+  start_time         DateTime
+  end_time           DateTime
+  merkle_root        String?
+  total_tickets      Int      @default(0)
+  randomness         String?
+  winning_ticket     Int?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  entries DrawEntry[]
+  claims  DrawClaim[]
+
+  @@index([campaign_id])
+}
+
+model DrawEntry {
+  id           String   @id @default(uuid())
+  draw_id      String
+  draw         Draw     @relation(fields: [draw_id], references: [id])
+  user_id      String
+  user         User     @relation(fields: [user_id], references: [id])
+  tickets      Int
+  start_ticket Int
+  end_ticket   Int
+  points_spent Int
+  status       String   @default("active")
+  claimed      Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  claims DrawClaim[]
+
+  @@unique([draw_id, user_id])
+}
+
+model DrawClaim {
+  id         String    @id @default(uuid())
+  draw_id    String
+  draw       Draw      @relation(fields: [draw_id], references: [id])
+  entry_id   String
+  entry      DrawEntry @relation(fields: [entry_id], references: [id])
+  user_id    String
+  user       User      @relation(fields: [user_id], references: [id])
+  proof      String
+  tx_hash    String?
+  claimed_at DateTime?
+  created_at DateTime  @default(now())
+
+  @@unique([draw_id, user_id])
+}
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  project_id  String
+  project     Project  @relation(fields: [project_id], references: [id])
+  user_id     String
+  user        User     @relation(fields: [user_id], references: [id])
+  key_id      String   @unique
+  secret_hash String
+  permissions String   @default("[]")
+  rate_limit  Int      @default(1000)
+  status      String   @default("active")
+  last_used_at DateTime?
+  created_at  DateTime @default(now())
+
+  @@index([project_id])
+}
+
+model WebhookSubscription {
+  id        String   @id @default(uuid())
+  project_id String
+  url       String
+  events    String   @default("[]")
+  secret    String
+  status    String   @default("active")
+  created_at DateTime @default(now())
+
+  @@index([project_id])
+}
+
+model RiskEvent {
+  id           String   @id @default(uuid())
+  user_id      String?
+  event_type   String
+  event_data   String   @default("{}")
+  risk_score   Int?
+  action_taken String?
+  created_at   DateTime @default(now())
+
+  @@index([user_id])
+}

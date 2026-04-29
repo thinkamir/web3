@@ -1,0 +1,21 @@
+{
+  "name": "@alphaquest/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "test:coverage": "forge coverage",
+    "format": "forge fmt",
+    "lint": "forge fmt --check",
+    "deploy:local": "forge script script/Deploy.s.sol --fork http://localhost:8545",
+    "deploy:sepolia": "forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast"
+  },
+  "dependencies": {
+    "forge-std": "https://github.com/foundry-rs/forge-std",
+    "openzeppelin-contracts": "https://github.com/OpenZeppelin/openzeppelin-contracts"
+  },
+  "devDependencies": {
+    "foundry-rs/foundry": "^1.0.0"
+  }
+}
