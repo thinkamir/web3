@@ -11,6 +11,7 @@ contract PrizeVault is AccessControl, Pausable, ReentrancyGuard {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant ROUND_CREATOR_ROLE = keccak256("ROUND_CREATOR_ROLE");
     bytes32 public constant TREASURY_ROLE = keccak256("TREASURY_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     struct PrizeInfo {
         address sponsor;
@@ -22,21 +23,21 @@ contract PrizeVault is AccessControl, Pausable, ReentrancyGuard {
         address roundAddress;
     }
 
-    mapping(bytes32 => PrizeInfo) public prizes;
+    mapping(uint256 => PrizeInfo) public prizes;
     mapping(address => uint256) public erc20Balances;
     mapping(address => mapping(uint256 => address)) public nftOwners;
 
     event PrizeDeposited(
-        bytes32 indexed prizeId,
+        uint256 indexed prizeId,
         address indexed sponsor,
         uint256 amount,
         address token,
         uint256 tokenId,
         bool isNFT
     );
-    event PrizeLocked(bytes32 indexed prizeId, address indexed roundAddress);
-    event PrizeReleased(bytes32 indexed prizeId, address indexed winner, uint256 amount);
-    event PrizeRefunded(bytes32 indexed prizeId, address indexed sponsor, uint256 amount);
+    event PrizeLocked(uint256 indexed prizeId, address indexed roundAddress);
+    event PrizeReleased(uint256 indexed prizeId, address indexed winner, uint256 amount);
+    event PrizeRefunded(uint256 indexed prizeId, address indexed sponsor, uint256 amount);
     event EmergencyPause(address indexed pauser);
 
     constructor() {
@@ -47,7 +48,7 @@ contract PrizeVault is AccessControl, Pausable, ReentrancyGuard {
     function depositERC20Prize(
         address token,
         uint256 amount,
-        bytes32 prizeId
+        uint256 prizeId
     ) external whenNotPaused nonReentrant {
         require(token != address(0), "Invalid token address");
         require(amount > 0, "Amount must be greater than 0");
@@ -71,7 +72,7 @@ contract PrizeVault is AccessControl, Pausable, ReentrancyGuard {
     function depositNFTPrize(
         address token,
         uint256 tokenId,
-        bytes32 prizeId
+        uint256 prizeId
     ) external whenNotPaused nonReentrant {
         require(token != address(0), "Invalid token address");
         require(prizes[prizeId].sponsor == address(0), "Prize ID already exists");
@@ -91,7 +92,7 @@ contract PrizeVault is AccessControl, Pausable, ReentrancyGuard {
         emit PrizeDeposited(prizeId, msg.sender, 1, token, tokenId, true);
     }
 
-    function lockPrizeForRound(bytes32 prizeId, address roundAddress) external onlyRole(OPERATOR_ROLE) {
+    function lockPrizeForRound(uint256 prizeId, address roundAddress) external onlyRole(OPERATOR_ROLE) {
         require(prizes[prizeId].sponsor != address(0), "Prize does not exist");
         require(!prizes[prizeId].locked, "Prize already locked");
         require(roundAddress != address(0), "Invalid round address");
@@ -102,7 +103,7 @@ contract PrizeVault is AccessControl, Pausable, ReentrancyGuard {
         emit PrizeLocked(prizeId, roundAddress);
     }
 
-    function releasePrizeToWinner(bytes32 prizeId, address winner) external onlyRole(OPERATOR_ROLE) nonReentrant {
+    function releasePrizeToWinner(uint256 prizeId, address winner) external onlyRole(OPERATOR_ROLE) nonReentrant {
         require(prizes[prizeId].locked, "Prize not locked for any round");
         require(prizes[prizeId].roundAddress == msg.sender, "Caller is not the designated round");
         require(winner != address(0), "Invalid winner address");
@@ -119,10 +120,10 @@ contract PrizeVault is AccessControl, Pausable, ReentrancyGuard {
         emit PrizeReleased(prizeId, winner, prize.amount);
     }
 
-    function refundPrizeToSponsor(bytes32 prizeId) external onlyRole(OPERATOR_ROLE) nonReentrant {
+    function refundPrizeToSponsor(uint256 prizeId) external onlyRole(OPERATOR_ROLE) nonReentrant {
         require(prizes[prizeId].sponsor != address(0), "Prize does not exist");
         require(prizes[prizeId].locked, "Prize not locked");
-        require(!prizes[prizeId].isNFT, "NFT prizes require manual处理");
+        require(!prizes[prizeId].isNFT, "NFT prizes require manual processing");
 
         PrizeInfo storage prize = prizes[prizeId];
         prize.locked = false;
@@ -141,7 +142,7 @@ contract PrizeVault is AccessControl, Pausable, ReentrancyGuard {
         _unpause();
     }
 
-    function getPrizeInfo(bytes32 prizeId) external view returns (PrizeInfo memory) {
+    function getPrizeInfo(uint256 prizeId) external view returns (PrizeInfo memory) {
         return prizes[prizeId];
     }
 }

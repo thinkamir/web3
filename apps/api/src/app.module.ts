@@ -9,6 +9,8 @@ import { DrawModule } from './draw/draw.module';
 import { ProjectModule } from './project/project.module';
 import { RiskModule } from './risk/risk.module';
 import { ApiModule } from './api-platform/api.module';
+import { ReferralModule } from './referral/referral.module';
+import { WebhookModule } from './webhook/webhook.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -26,6 +28,8 @@ import { PrismaModule } from './prisma/prisma.module';
     ProjectModule,
     RiskModule,
     ApiModule,
+    ReferralModule,
+    WebhookModule,
   ],
 })
 export class AppModule {}

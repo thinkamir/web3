@@ -1,7 +1,2 @@
-@foundry-rs/forge-std/=lib/forge-std/
+@foundry-rs/forge-std/=lib/forge-std/src/
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
-
-remappings = [
-    "@foundry-rs/forge-std/=lib/forge-std/",
-    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
-]

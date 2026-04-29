@@ -1,13 +1,4 @@
-{
-  "solidity": "0.8.20",
-  "settings": {
-    "optimizer": {
-      "enabled": true,
-      "runs": 200
-    },
-    "remappings": [
-      "@foundry-rs/forge-std/=lib/forge-std/",
-      "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
-    ]
-  }
-}
+[profile.default]
+solidity = "0.8.20"
+optimizer = true
+via_ir = true

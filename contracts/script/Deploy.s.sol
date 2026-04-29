@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@foundry-rs/forge-std/Script.sol";
-import "@foundry-rs/forge-std/console.sol";
-import "../../src/PrizeVault.sol";
-import "../../src/DrawRoundManager.sol";
+import "forge-std/Script.sol";
+import "forge-std/console.sol";
+import "../src/PrizeVault.sol";
+import "../src/DrawRoundManager.sol";
 
 contract DeployScript is Script {
     function run() external {

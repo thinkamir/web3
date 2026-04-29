@@ -19,9 +19,9 @@ interface IVRFCoordinator {
 }
 
 contract DrawRoundManager is AccessControl, Pausable, ReentrancyGuard, MerkleEntryVerifier {
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant ROUND_CREATOR_ROLE = keccak256("ROUND_CREATOR_ROLE");
     bytes32 public constant TREASURY_ROLE = keccak256("TREASURY_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     IVRFCoordinator public vrfCoordinator;
     bytes32 public vrfKeyHash;
@@ -163,7 +163,8 @@ contract DrawRoundManager is AccessControl, Pausable, ReentrancyGuard, MerkleEnt
     function claimPrize(uint256 roundId, address claimant, bytes32[] calldata proof) external nonReentrant {
         require(rounds[roundId].status == RoundStatus.Finalized, "Round not finalized");
         require(!hasClaimed[roundId][claimant], "Already claimed");
-        require(prizeVault.prizes(rounds[roundId].prizeId).locked, "Prize not locked");
+        PrizeVault.PrizeInfo memory prizeInfo = prizeVault.getPrizeInfo(rounds[roundId].prizeId);
+        require(prizeInfo.locked, "Prize not locked");
 
         uint256 userStartTicket = userTickets[roundId][claimant];
         uint256 userEndTicket = userStartTicket + rounds[roundId].maxPerUser - 1;

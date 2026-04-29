@@ -11,8 +11,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "@alphaquest/types": "workspace:*",
-    "@alphaquest/ui": "workspace:*",
+    "@alphaquest/types": "*",
+    "@alphaquest/ui": "*",
     "@tanstack/react-query": "^5.17.0",
     "@wagmi/core": "^2.7.0",
     "clsx": "^2.1.0",
