@@ -1,0 +1,298 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  wallet        String    @unique @db.VarChar(42)
+  username      String?   @db.VarChar(100)
+  avatar        String?   @db.Text
+  email         String?   @db.VarChar(255)
+  twitter       String?   @db.VarChar(100)
+  telegram      String?   @db.VarChar(100)
+  discord       String?   @db.VarChar(100)
+  referral_code String    @unique @db.VarChar(20)
+  inviter_id    String?
+  inviter       User?     @relation("ReferralRelation", fields: [inviter_id], references: [id])
+  invitees      User[]    @relation("ReferralRelation")
+  user_level    Int       @default(1) @db.Integer
+  risk_score    Int       @default(0) @db.Integer
+  status        String    @default("active") @db.VarChar(20)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  point_transactions PointTransaction[]
+  task_submissions   TaskSubmission[]
+  draw_entries       DrawEntry[]
+  draw_claims        DrawClaim[]
+  referrals          Referral[]
+  api_keys           ApiKey[]
+  project_members    ProjectMember[]
+
+  @@index([wallet])
+  @@index([referral_code])
+  @@index([inviter_id])
+}
+
+model Project {
+  id                   String   @id @default(uuid())
+  name                 String   @db.VarChar(100)
+  website              String?  @db.Text
+  logo                 String?  @db.Text
+  description          String?  @db.Text
+  owner_user_id        String
+  owner                User     @relation(fields: [owner_user_id], references: [id])
+  verification_status String   @default("pending") @db.VarChar(20)
+  risk_level          String   @default("low") @db.VarChar(20)
+  twitter              String?  @db.VarChar(100)
+  telegram             String?  @db.VarChar(100)
+  discord              String?  @db.VarChar(100)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  campaigns    Campaign[]
+  project_members ProjectMember[]
+
+  @@index([owner_user_id])
+  @@index([verification_status])
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  project_id String
+  project    Project  @relation(fields: [project_id], references: [id])
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  role       String   @db.VarChar(20)
+  created_at DateTime @default(now())
+
+  @@unique([project_id, user_id])
+  @@index([project_id])
+  @@index([user_id])
+}
+
+model Campaign {
+  id            String   @id @default(uuid())
+  project_id    String
+  project       Project  @relation(fields: [project_id], references: [id])
+  title         String   @db.VarChar(200)
+  description   String   @db.Text
+  status        String   @default("draft") @db.VarChar(20)
+  start_time    DateTime
+  end_time      DateTime
+  region_restriction String[] @default([])
+  risk_level    String   @default("low") @db.VarChar(20)
+  reward_config Json     @default("{}")
+  risk_config   Json     @default("{}")
+  terms         String?  @db.Text
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  tasks Task[]
+  draws Draw[]
+
+  @@index([project_id])
+  @@index([status])
+}
+
+model Task {
+  id                 String   @id @default(uuid())
+  campaign_id        String
+  campaign           Campaign @relation(fields: [campaign_id], references: [id])
+  type               String   @db.VarChar(20)
+  title              String   @db.VarChar(200)
+  description        String   @db.Text
+  reward_points      Int      @default(0) @db.Integer
+  verification_type  String   @db.VarChar(20)
+  requirements       Json     @default("{}")
+  max_completions    Int?
+  per_user_limit     Int      @default(1) @db.Integer
+  start_time         DateTime?
+  end_time           DateTime?
+  status             String   @default("available") @db.VarChar(20)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  submissions TaskSubmission[]
+
+  @@index([campaign_id])
+  @@index([status])
+  @@index([type])
+}
+
+model TaskSubmission {
+  id          String    @id @default(uuid())
+  task_id     String
+  task        Task      @relation(fields: [task_id], references: [id])
+  user_id     String
+  user        User      @relation(fields: [user_id], references: [id])
+  status      String    @default("pending_review") @db.VarChar(20)
+  proof       Json?
+  review_note String?   @db.Text
+  reviewed_by String?
+  reviewed_at DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  @@unique([task_id, user_id])
+  @@index([task_id])
+  @@index([user_id])
+  @@index([status])
+}
+
+model PointTransaction {
+  id           String   @id @default(uuid())
+  user_id      String
+  user         User     @relation(fields: [user_id], references: [id])
+  amount       Int      @db.Integer
+  direction    String   @db.VarChar(10)
+  point_type   String   @default("earned") @db.VarChar(20)
+  status       String   @default("available") @db.VarChar(20)
+  source_type  String   @db.VarChar(30)
+  source_id    String?
+  balance_after Int     @db.Integer
+  risk_score   Int?
+  created_at   DateTime @default(now())
+  confirmed_at DateTime?
+
+  @@index([user_id])
+  @@index([source_type, source_id])
+  @@index([status])
+}
+
+model Referral {
+  id            String   @id @default(uuid())
+  referrer_id   String
+  referrer      User     @relation(fields: [referrer_id], references: [id])
+  invitee_id    String
+  invitee       User     @relation(fields: [invitee_id], references: [id])
+  referral_type String   @db.VarChar(30)
+  reward_amount Int      @default(0) @db.Integer
+  status        String   @default("pending") @db.VarChar(20)
+  created_at    DateTime @default(now())
+  confirmed_at  DateTime?
+
+  @@unique([invitee_id, referral_type])
+  @@index([referrer_id])
+  @@index([invitee_id])
+  @@index([status])
+}
+
+model Draw {
+  id                 String   @id @default(uuid())
+  campaign_id        String
+  campaign           Campaign @relation(fields: [campaign_id], references: [id])
+  title              String   @db.VarChar(200)
+  description        String   @db.Text
+  type               String   @default("points_lottery") @db.VarChar(20)
+  status             String   @default("draft") @db.VarChar(20)
+  prize_description  String   @db.Text
+  prize_amount       Int      @default(0) @db.Integer
+  prize_contract     String?  @db.VarChar(42)
+  prize_token_id     String?
+  target_points      Int      @default(0) @db.Integer
+  max_per_user       Int      @default(1) @db.Integer
+  points_per_ticket  Int      @default(1) @db.Integer
+  free_entry_enabled Boolean  @default(false)
+  start_time         DateTime
+  end_time           DateTime
+  merkle_root        String?  @db.VarChar(66)
+  total_tickets      Int      @default(0) @db.Integer
+  randomness         String?  @db.VarChar(66)
+  winning_ticket     Int?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  entries DrawEntry[]
+  claims  DrawClaim[]
+
+  @@index([campaign_id])
+  @@index([status])
+}
+
+model DrawEntry {
+  id           String   @id @default(uuid())
+  draw_id      String
+  draw         Draw     @relation(fields: [draw_id], references: [id])
+  user_id      String
+  user         User     @relation(fields: [user_id], references: [id])
+  tickets      Int      @db.Integer
+  start_ticket Int      @db.Integer
+  end_ticket   Int      @db.Integer
+  points_spent Int      @db.Integer
+  status       String   @default("active") @db.VarChar(20)
+  claimed      Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  claims DrawClaim[]
+
+  @@unique([draw_id, user_id])
+  @@index([draw_id])
+  @@index([user_id])
+}
+
+model DrawClaim {
+  id         String    @id @default(uuid())
+  draw_id    String
+  draw       Draw      @relation(fields: [draw_id], references: [id])
+  entry_id   String
+  entry      DrawEntry @relation(fields: [entry_id], references: [id])
+  user_id    String
+  user       User      @relation(fields: [user_id], references: [id])
+  proof      String[]
+  tx_hash    String?
+  claimed_at DateTime?
+  created_at DateTime  @default(now())
+
+  @@unique([draw_id, user_id])
+  @@index([draw_id])
+  @@index([user_id])
+}
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  project_id  String
+  project     Project  @relation(fields: [project_id], references: [id])
+  user_id     String
+  user        User     @relation(fields: [user_id], references: [id])
+  key_id      String   @unique @db.VarChar(40)
+  secret_hash String   @db.Text
+  permissions Json     @default("[]")
+  rate_limit  Int      @default(1000) @db.Integer
+  status      String   @default("active") @db.VarChar(20)
+  last_used_at DateTime?
+  created_at  DateTime @default(now())
+
+  @@index([project_id])
+  @@index([key_id])
+}
+
+model WebhookSubscription {
+  id        String   @id @default(uuid())
+  project_id String
+  url       String   @db.Text
+  events    String[] @default([])
+  secret    String   @db.Text
+  status    String   @default("active") @db.VarChar(20)
+  created_at DateTime @default(now())
+
+  @@index([project_id])
+}
+
+model RiskEvent {
+  id           String   @id @default(uuid())
+  user_id      String?
+  event_type   String   @db.VarChar(50)
+  event_data   Json     @default("{}")
+  risk_score   Int?
+  action_taken String?  @db.VarChar(50)
+  created_at   DateTime @default(now())
+
+  @@index([user_id])
+  @@index([event_type])
+}
