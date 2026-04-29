@@ -2,10 +2,9 @@
 
 import { useState } from 'react';
 import { Providers } from './providers';
-import { Button } from '@alphaquest/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@alphaquest/ui/card';
-import { Input } from '@alphaquest/ui/input';
-import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from '@alphaquest/ui/modal';
+import { Button } from '@/components/Button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/Card';
+import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from '@/components/Modal';
 
 export default function HomePage() {
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
