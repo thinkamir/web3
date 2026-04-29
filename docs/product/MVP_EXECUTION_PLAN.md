@@ -1326,3 +1326,149 @@ Auth/User
 5. 最后一批做 E2E、安全、部署和 Beta 上线。
 
 这样可以把原本串行 12-16 周的工作，压缩成更高并行度的 8-12 周 MVP 开发周期。前提是任务边界清晰、接口契约稳定、人工 Review 严格。
+
+---
+
+## 12. 面向本次需求的分模块交付清单（用户端 Web/H5 UI、项目方 Dashboard UI、Admin UI、后端与合约 MVP）
+
+> 本节用于把你提出的 6 个大模块直接映射到可并行开发的工程任务，默认对应 P0 MVP。
+
+### 12.1 用户端 Web/H5 UI
+
+1. 认证与账户
+   - 钱包连接（EVM）
+   - SIWE 签名登录
+   - 登录态持久化与退出
+2. 任务中心
+   - 任务列表（可用 / 进行中 / 已完成）
+   - 任务详情（规则、奖励、状态）
+   - 签到、答题、链上交易、人工审核提交入口
+3. 积分与邀请
+   - 积分余额卡片（available / pending / locked）
+   - 积分流水列表
+   - 邀请链接与邀请统计
+4. 奖励池
+   - 奖池列表与详情
+   - 参与记录与 ticket 展示
+   - 开奖结果与 claim 入口
+5. 风控反馈
+   - pending 原因提示
+   - 高风险用户限制提示
+
+验收基线：
+- 新用户 5 分钟内可完成“登录→签到→查看积分→复制邀请链接”。
+- 任务完成后 UI 能展示明确状态变更和到账类型（pending/available）。
+
+### 12.2 项目方 Dashboard UI
+
+1. 项目管理
+   - 项目资料编辑（名称、Logo、官网、社媒）
+2. Campaign 管理
+   - 新建 / 编辑 / 草稿 / 提交审核 / 发布
+3. 任务配置器
+   - 4 类任务配置：签到、答题、链上交易、人工审核
+4. 奖励池管理
+   - 奖励池创建、奖品参数、开放/封存状态
+5. 数据看板
+   - 参与人数、任务完成率、积分发放、转化漏斗
+6. 开放平台
+   - API Key 管理（secret 一次展示）
+   - Webhook 配置（URL、签名状态、重试状态）
+
+验收基线：
+- 项目方可独立完成“创建活动→配置任务→提交审核→查看基础数据”。
+
+### 12.3 Admin UI
+
+1. 审核中心
+   - 项目审核
+   - Campaign 审核
+   - 任务审核
+2. 风控中心
+   - 高风险账户列表
+   - 冻结/解封操作
+   - 异常邀请处理
+3. 用户与积分
+   - 用户检索、积分流水查询
+   - 冲正操作（自动生成反向流水）
+4. 奖励池监控
+   - root、随机数、winner、claim 状态可视化
+5. 运维与审计
+   - 管理员操作日志
+   - webhook 失败重试与告警列表
+
+验收基线：
+- 任意管理写操作均可追溯到审计日志。
+
+### 12.4 Auth/User 后端
+
+1. Auth
+   - nonce 生成与过期
+   - SIWE 验签
+   - access/refresh token
+2. User
+   - 首次登录自动建档
+   - 用户资料更新
+   - referral_code 自动生成
+3. Session & Security
+   - 登录限频
+   - 黑名单钱包拦截
+   - 基础设备/IP 记录
+
+关键数据表：users、auth_nonces、sessions、risk_profiles。
+
+### 12.5 Project/Campaign 后端
+
+1. Project Service
+   - 项目 CRUD
+   - 项目成员与角色权限（owner/editor/viewer）
+2. Campaign Service
+   - campaign 生命周期（draft/review/published/paused/closed）
+3. Task Service
+   - 任务模板与规则校验
+   - task_submission 状态机
+4. Point Ledger Service
+   - 发放、锁定、释放、冲正
+   - 余额由流水计算/快照
+5. API & Webhook Service
+   - API key + HMAC 签名
+   - timestamp/nonce 防重放
+   - webhook 重试队列
+
+关键数据表：projects、project_members、campaigns、tasks、task_submissions、point_transactions、api_keys、webhooks、webhook_deliveries。
+
+### 12.6 Smart Contracts MVP
+
+1. PrizeVault
+   - 奖品托管
+   - 管理可提取规则（仅异常回滚场景）
+2. DrawManager
+   - round 创建与状态流转
+   - finalMerkleRoot 提交
+   - 随机数写入（VRF 或 MockVRF）
+   - winningTicket 计算
+3. ClaimVerifier
+   - Merkle proof 验证
+   - 防重复 claim
+4. Event 标准化
+   - RoundCreated / RootFinalized / RandomFulfilled / WinnerClaimed
+
+合约验收基线：
+- 必须包含 Foundry 单元测试和关键安全路径测试（重复领取、越权、空 root、未开奖 claim）。
+
+### 12.7 并行实施顺序（建议）
+
+- Wave 1（地基）：Auth/User 后端 + Project/Campaign 后端骨架 + 合约骨架
+- Wave 2（主链路）：用户端 UI + Dashboard UI + 积分账本 + task_submission
+- Wave 3（可信闭环）：奖励池链路（Merkle + 随机数 + claim）+ Admin 风控与审核
+- Wave 4（对外能力）：API Key/HMAC/Webhook + 监控告警 + 回归测试
+
+### 12.8 DoD（Definition of Done）
+
+满足以下条件才视为 MVP 可演示：
+
+1. C 端可完成至少 1 条完整任务并看到积分流水。
+2. 项目方可发布 1 个活动并查看参与数据。
+3. Admin 可审核活动并处理 1 个风控案例。
+4. 链上奖励池可完成“封存→开奖→中奖 claim”全流程。
+5. API 写请求均通过签名校验且有审计日志。
