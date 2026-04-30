@@ -5,32 +5,41 @@ import { Button } from '@/components/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/Card';
 import { Input } from '@/components/Input';
 import { Header } from '@/components/Header';
+import { useWallet } from '@/contexts/WalletContext';
 
-const mockUser = {
-  wallet: '0x1234...5678',
-  username: 'CryptoHunter',
-  avatar: null,
-  level: 5,
-  totalPoints: 12500,
-  availablePoints: 8500,
-  pendingPoints: 2000,
-  lockedPoints: 2000,
-  tasksCompleted: 45,
-  drawsJoined: 12,
-  drawsWon: 2,
-  referrals: 8,
-};
-
-const mockPointHistory = [
-  { id: '1', type: 'earned', amount: 100, source: 'Daily Sign-in', date: '2024-01-15' },
-  { id: '2', type: 'spent', amount: -500, source: 'Draw Participation', date: '2024-01-14' },
-  { id: '3', type: 'earned', amount: 200, source: 'Complete Task', date: '2024-01-13' },
-  { id: '4', type: 'earned', amount: 50, source: 'Referral Bonus', date: '2024-01-12' },
-  { id: '5', type: 'pending', amount: 100, source: 'Pending Verification', date: '2024-01-11' },
-];
+interface PointTransaction {
+  id: string;
+  type: 'earned' | 'spent' | 'pending';
+  amount: number;
+  source: string;
+  date: string;
+}
 
 export default function ProfilePage() {
+  const { address, isConnected } = useWallet();
   const [activeTab, setActiveTab] = useState('overview');
+
+  const mockUser = {
+    wallet: address || '0x1234...5678',
+    username: 'CryptoHunter',
+    level: 5,
+    totalPoints: 12500,
+    availablePoints: 8500,
+    pendingPoints: 2000,
+    lockedPoints: 2000,
+    tasksCompleted: 45,
+    drawsJoined: 12,
+    drawsWon: 2,
+    referrals: 8,
+  };
+
+  const mockPointHistory: PointTransaction[] = [
+    { id: '1', type: 'earned', amount: 100, source: 'Daily Sign-in', date: '2024-01-15' },
+    { id: '2', type: 'spent', amount: -500, source: 'Draw Participation', date: '2024-01-14' },
+    { id: '3', type: 'earned', amount: 200, source: 'Complete Task', date: '2024-01-13' },
+    { id: '4', type: 'earned', amount: 50, source: 'Referral Bonus', date: '2024-01-12' },
+    { id: '5', type: 'pending', amount: 100, source: 'Pending Verification', date: '2024-01-11' },
+  ];
 
   const copyReferralLink = () => {
     navigator.clipboard.writeText(`https://alphaquest.io/invite/${mockUser.referrals}`);
@@ -45,10 +54,12 @@ export default function ProfilePage() {
             <Card>
               <CardContent className="text-center py-8">
                 <div className="w-20 h-20 bg-cyan-600 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold">
-                  {mockUser.wallet.slice(0, 2).toUpperCase()}
+                  {mockUser.wallet.slice(2, 4).toUpperCase()}
                 </div>
-                <h2 className="text-xl font-semibold mb-1">{mockUser.username || 'Anonymous'}</h2>
-                <p className="text-gray-400 text-sm mb-4">{mockUser.wallet}</p>
+                <h2 className="text-xl font-semibold mb-1">{mockUser.username}</h2>
+                <p className="text-gray-400 text-sm mb-4 font-mono">
+                  {mockUser.wallet.slice(0, 6)}...{mockUser.wallet.slice(-4)}
+                </p>
                 <div className="inline-block px-3 py-1 bg-cyan-600/20 text-cyan-400 rounded-full text-sm">
                   Level {mockUser.level}
                 </div>
@@ -102,14 +113,14 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex gap-2 mb-6">
-                  <Button variant="outline" className="flex-1">Withdraw</Button>
+                  <Button variant="outline" className="flex-1" disabled>Withdraw</Button>
                   <Button variant="outline" className="flex-1">History</Button>
                 </div>
 
                 <h3 className="font-semibold mb-3">Referral Program</h3>
                 <div className="flex gap-2">
                   <Input
-                    value={`https://alphaquest.io/invite/CODE${mockUser.referrals}`}
+                    value={`https://alphaquest.io/invite/${mockUser.referrals}`}
                     readOnly
                     className="flex-1"
                   />

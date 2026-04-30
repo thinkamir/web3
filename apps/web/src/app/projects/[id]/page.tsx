@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/Card';
+import { Header } from '@/components/Header';
 
 const mockProject = {
   id: '1',
@@ -27,29 +29,14 @@ const mockProject = {
   },
 };
 
-export default function ProjectPage({ params }: { params: { id: string } }) {
+export default function ProjectPage() {
+  const params = useParams();
   const [activeTab, setActiveTab] = useState('campaigns');
+  const projectId = params.id as string;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <header className="border-b border-gray-800">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-cyan-600 rounded-lg flex items-center justify-center">
-              <span className="font-bold">A</span>
-            </div>
-            <span className="text-xl font-bold">AlphaQuest</span>
-          </div>
-          <nav className="flex items-center gap-6">
-            <a href="/" className="text-gray-400 hover:text-white">Home</a>
-            <a href="/tasks" className="text-gray-400 hover:text-white">Tasks</a>
-            <a href="/draws" className="text-gray-400 hover:text-white">Draws</a>
-            <a href="/profile" className="text-gray-400 hover:text-white">Profile</a>
-          </nav>
-          <Button>Connect Wallet</Button>
-        </div>
-      </header>
-
+    <>
+      <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-start gap-6 mb-8">
           <div className="w-20 h-20 bg-cyan-600 rounded-2xl flex items-center justify-center text-3xl font-bold">
@@ -66,13 +53,13 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
             </div>
             <p className="text-gray-400 mb-4">{mockProject.description}</p>
             <div className="flex gap-4">
-              <a href={mockProject.website} className="text-cyan-400 hover:underline" target="_blank">
+              <a href={mockProject.website} className="text-cyan-400 hover:underline" target="_blank" rel="noopener noreferrer">
                 Website
               </a>
-              <a href={`https://twitter.com/${mockProject.twitter}`} className="text-cyan-400 hover:underline" target="_blank">
+              <a href={`https://twitter.com/${mockProject.twitter}`} className="text-cyan-400 hover:underline" target="_blank" rel="noopener noreferrer">
                 {mockProject.twitter}
               </a>
-              <a href={mockProject.telegram} className="text-cyan-400 hover:underline" target="_blank">
+              <a href={mockProject.telegram} className="text-cyan-400 hover:underline" target="_blank" rel="noopener noreferrer">
                 Telegram
               </a>
             </div>
@@ -179,6 +166,6 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
           </Card>
         )}
       </main>
-    </div>
+    </>
   );
 }
