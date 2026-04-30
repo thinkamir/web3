@@ -9,6 +9,8 @@ const mockTasks = [
   { id: '6', title: 'Submit Feedback', description: 'Submit project feedback', points: 50, type: 'manual', participants: 89, status: 'available' },
 ];
 
+const completedTasks: Map<string, string[]> = new Map();
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
@@ -25,4 +27,66 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({ tasks: filteredTasks });
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { taskId, wallet, txHash, proofUrl } = body;
+
+    if (!taskId || !wallet) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const task = mockTasks.find(t => t.id === taskId);
+    if (!task) {
+      return NextResponse.json(
+        { error: 'Task not found' },
+        { status: 404 }
+      );
+    }
+
+    const userCompletedTasks = completedTasks.get(wallet) || [];
+    if (userCompletedTasks.includes(taskId)) {
+      return NextResponse.json(
+        { error: 'Task already completed' },
+        { status: 400 }
+      );
+    }
+
+    if (task.type === 'onchain' && !txHash) {
+      return NextResponse.json(
+        { error: 'Transaction hash required for on-chain tasks' },
+        { status: 400 }
+      );
+    }
+
+    if (task.type === 'social' && !proofUrl) {
+      return NextResponse.json(
+        { error: 'Proof URL required for social tasks' },
+        { status: 400 }
+      );
+    }
+
+    userCompletedTasks.push(taskId);
+    completedTasks.set(wallet, userCompletedTasks);
+
+    return NextResponse.json({
+      success: true,
+      task: {
+        id: task.id,
+        title: task.title,
+        points: task.points,
+      },
+      message: `Task completed! You earned ${task.points} AP.`,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Invalid request body' },
+      { status: 400 }
+    );
+  }
 }
