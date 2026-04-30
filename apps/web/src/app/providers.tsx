@@ -3,7 +3,9 @@
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
 import { injected } from 'wagmi/connectors';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletProvider } from '@/contexts/WalletContext';
+import { useState } from 'react';
 
 const config = createConfig({
   chains: [mainnet, sepolia],
@@ -17,11 +19,15 @@ const config = createConfig({
 });
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+
   return (
     <WagmiProvider config={config}>
-      <WalletProvider>
-        {children}
-      </WalletProvider>
+      <QueryClientProvider client={queryClient}>
+        <WalletProvider>
+          {children}
+        </WalletProvider>
+      </QueryClientProvider>
     </WagmiProvider>
   );
 }
