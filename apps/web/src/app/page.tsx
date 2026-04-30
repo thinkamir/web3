@@ -1,14 +1,14 @@
 'use client';
 
+import Link from 'next/link';
 import { Button } from '@/components/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/Card';
-import { useWallet } from '@/contexts/WalletContext';
+import { Header } from '@/components/Header';
 
 export default function HomePage() {
-  const { isConnected, connect } = useWallet();
-
   return (
     <>
+      <Header />
       <main>
         <section className="py-20">
           <div className="container mx-auto px-4 text-center">
@@ -20,12 +20,12 @@ export default function HomePage() {
               reward users, and build your community with on-chain fair draws.
             </p>
             <div className="flex gap-4 justify-center">
-              <Button size="lg" asChild>
-                <a href="/tasks">Start Exploring</a>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <a href="/dashboard">For Projects</a>
-              </Button>
+              <Link href="/tasks">
+                <Button size="lg">Start Exploring</Button>
+              </Link>
+              <Link href="/dashboard">
+                <Button size="lg" variant="outline">For Projects</Button>
+              </Link>
             </div>
           </div>
         </section>
@@ -42,9 +42,9 @@ export default function HomePage() {
                   <p className="text-gray-400 mb-4">Complete daily sign-in to earn points</p>
                   <div className="flex items-center justify-between">
                     <span className="text-cyan-400 font-semibold">+10 AP</span>
-                    <Button size="sm" asChild>
-                      <a href="/tasks">Start</a>
-                    </Button>
+                    <Link href="/tasks">
+                      <Button size="sm">Start</Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
