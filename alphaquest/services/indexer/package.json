@@ -1,0 +1,9 @@
+{
+  "name": "@alphaquest/service-indexer",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "start": "echo \"indexer start placeholder\"",
+    "test": "echo \"indexer test placeholder\""
+  }
+}
