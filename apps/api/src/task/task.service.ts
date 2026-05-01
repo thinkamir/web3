@@ -176,10 +176,10 @@ export class TaskService {
       },
     });
 
-    const consecutiveDays = yesterdaySignin ? 2 : 1;
+    const consecutiveDays: number = yesterdaySignin ? 2 : 1;
 
     let rewardPoints = consecutiveDays;
-    if (consecutiveDays === 7) {
+    if (consecutiveDays >= 7) {
       rewardPoints = 10;
     }
 

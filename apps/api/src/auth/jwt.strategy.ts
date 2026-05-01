@@ -4,6 +4,14 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 
+function resolveJwtSecret(configService: ConfigService): string {
+  const secret = configService.get<string>('JWT_SECRET');
+  if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET is required in production');
+  }
+  return secret || 'dev-only-alphaquest-secret-change-me';
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -13,7 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get('JWT_SECRET') || 'alphaquest-secret-key',
+      secretOrKey: resolveJwtSecret(configService),
     });
   }
 
@@ -22,13 +30,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       where: { id: payload.sub },
     });
 
-    if (!user) {
+    if (!user || user.status !== 'active') {
       throw new UnauthorizedException('User not found');
     }
 
     return {
-      userId: payload.sub,
-      wallet: payload.wallet,
+      userId: user.id,
+      id: user.id,
+      wallet: user.wallet,
+      status: user.status,
     };
   }
 }

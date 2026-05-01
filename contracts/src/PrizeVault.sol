@@ -11,6 +11,7 @@ contract PrizeVault is AccessControl, Pausable, ReentrancyGuard {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant ROUND_CREATOR_ROLE = keccak256("ROUND_CREATOR_ROLE");
     bytes32 public constant TREASURY_ROLE = keccak256("TREASURY_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     struct PrizeInfo {
         address sponsor;
@@ -122,7 +123,7 @@ contract PrizeVault is AccessControl, Pausable, ReentrancyGuard {
     function refundPrizeToSponsor(bytes32 prizeId) external onlyRole(OPERATOR_ROLE) nonReentrant {
         require(prizes[prizeId].sponsor != address(0), "Prize does not exist");
         require(prizes[prizeId].locked, "Prize not locked");
-        require(!prizes[prizeId].isNFT, "NFT prizes require manual处理");
+        require(!prizes[prizeId].isNFT, "NFT prizes require manual handling");
 
         PrizeInfo storage prize = prizes[prizeId];
         prize.locked = false;

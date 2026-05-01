@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
@@ -13,30 +13,36 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async generateNonce(wallet: string): Promise<{ nonce: string; expiresAt: Date }> {
+  async generateNonce(wallet: string): Promise<{ nonce: string; expiresAt: Date; message: string }> {
+    const normalizedWallet = this.normalizeWallet(wallet);
     const nonce = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const issuedAt = new Date();
+    const expiresAt = new Date(issuedAt.getTime() + 5 * 60 * 1000);
+    const domain = this.getAppDomain();
 
-    await this.prisma.user.upsert({
-      where: { wallet: wallet.toLowerCase() },
+    const user = await this.prisma.user.upsert({
+      where: { wallet: normalizedWallet },
       create: {
-        wallet: wallet.toLowerCase(),
+        wallet: normalizedWallet,
         referral_code: this.generateReferralCode(),
       },
       update: {},
     });
 
-    await this.prisma.pointTransaction.create({
+    const message = this.buildLoginMessage(normalizedWallet, nonce, issuedAt.getTime(), domain);
+
+    await this.prisma.authNonce.create({
       data: {
-        user: { connect: { wallet: wallet.toLowerCase() } },
-        amount: 0,
-        direction: 'credit',
-        source_type: 'nonce',
-        balance_after: 0,
+        user_id: user.id,
+        wallet: normalizedWallet,
+        nonce,
+        domain,
+        message,
+        expires_at: expiresAt,
       },
     });
 
-    return { nonce, expiresAt };
+    return { nonce, expiresAt, message };
   }
 
   async walletLogin(
@@ -44,56 +50,85 @@ export class AuthService {
     signature: string,
     nonce: string,
     timestamp: number,
+    message?: string,
   ): Promise<{ accessToken: string; refreshToken: string; user: any }> {
-    const domain = this.configService.get('APP_DOMAIN') || 'localhost';
-    const message = `Sign this message to login to AlphaQuest.\n\nWallet: ${wallet}\nNonce: ${nonce}\nTimestamp: ${timestamp}\nDomain: ${domain}`;
+    const normalizedWallet = this.normalizeWallet(wallet);
+    const domain = this.getAppDomain();
+
+    const authNonce = await this.prisma.authNonce.findUnique({
+      where: { nonce },
+      include: { user: true },
+    });
+
+    if (!authNonce || authNonce.wallet !== normalizedWallet || authNonce.domain !== domain) {
+      throw new UnauthorizedException('Invalid nonce');
+    }
+
+    if (authNonce.consumed_at) {
+      throw new UnauthorizedException('Nonce already consumed');
+    }
+
+    if (authNonce.expires_at.getTime() < Date.now()) {
+      throw new UnauthorizedException('Nonce expired');
+    }
+
+    if (Math.abs(Date.now() - timestamp) > 5 * 60 * 1000) {
+      throw new UnauthorizedException('Signature timestamp expired');
+    }
+
+    const expectedMessage = this.buildLoginMessage(normalizedWallet, nonce, timestamp, domain);
+    const loginMessage = message ?? expectedMessage;
+
+    if (expectedMessage !== authNonce.message || loginMessage !== authNonce.message) {
+      throw new UnauthorizedException('Invalid login message');
+    }
 
     try {
-      const recoveredAddress = ethers.verifyMessage(message, signature);
+      const recoveredAddress = ethers.verifyMessage(loginMessage, signature);
 
-      if (recoveredAddress.toLowerCase() !== wallet.toLowerCase()) {
+      if (recoveredAddress.toLowerCase() !== normalizedWallet) {
         throw new UnauthorizedException('Invalid signature');
       }
     } catch (error) {
       throw new UnauthorizedException('Signature verification failed');
     }
 
-    if (Date.now() - timestamp > 5 * 60 * 1000) {
-      throw new UnauthorizedException('Signature expired');
-    }
+    const user = await this.prisma.$transaction(async (tx) => {
+      const consumed = await tx.authNonce.updateMany({
+        where: {
+          id: authNonce.id,
+          consumed_at: null,
+          expires_at: { gt: new Date() },
+        },
+        data: { consumed_at: new Date() },
+      });
 
-    let user = await this.prisma.user.findUnique({
-      where: { wallet: wallet.toLowerCase() },
+      if (consumed.count !== 1) {
+        throw new UnauthorizedException('Nonce already consumed');
+      }
+
+      return tx.user.findUniqueOrThrow({
+        where: { id: authNonce.user_id },
+      });
     });
 
-    if (!user) {
-      const referralCode = this.generateReferralCode();
-      user = await this.prisma.user.create({
-        data: {
-          wallet: wallet.toLowerCase(),
-          referral_code: referralCode,
-        },
-      });
+    if (user.status !== 'active') {
+      throw new UnauthorizedException('User is not active');
     }
 
     const payload = { sub: user.id, wallet: user.wallet };
 
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: this.configService.get('JWT_ACCESS_EXPIRES_IN') || '1h',
+    });
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN') || '7d',
+    });
 
     return {
       accessToken,
       refreshToken,
-      user: {
-        id: user.id,
-        wallet: user.wallet,
-        username: user.username,
-        avatar: user.avatar,
-        referral_code: user.referral_code,
-        user_level: user.user_level,
-        risk_score: user.risk_score,
-        status: user.status,
-      },
+      user: this.serializeUser(user),
     };
   }
 
@@ -104,17 +139,47 @@ export class AuthService {
         where: { id: payload.sub },
       });
 
-      if (!user) {
+      if (!user || user.status !== 'active') {
         throw new UnauthorizedException('User not found');
       }
 
       const newPayload = { sub: user.id, wallet: user.wallet };
-      const accessToken = this.jwtService.sign(newPayload, { expiresIn: '1h' });
+      const accessToken = this.jwtService.sign(newPayload, {
+        expiresIn: this.configService.get('JWT_ACCESS_EXPIRES_IN') || '1h',
+      });
 
       return { accessToken };
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
+  }
+
+  private normalizeWallet(wallet: string): string {
+    if (!wallet || !ethers.isAddress(wallet)) {
+      throw new BadRequestException('Invalid wallet address');
+    }
+    return wallet.toLowerCase();
+  }
+
+  private buildLoginMessage(wallet: string, nonce: string, timestamp: number, domain: string): string {
+    return `${domain} wants you to sign in with your Ethereum account:\n${wallet}\n\nSign in to AlphaQuest.\n\nURI: ${domain}\nVersion: 1\nChain ID: 1\nNonce: ${nonce}\nIssued At: ${new Date(timestamp).toISOString()}`;
+  }
+
+  private getAppDomain(): string {
+    return this.configService.get('APP_DOMAIN') || 'localhost';
+  }
+
+  private serializeUser(user: any) {
+    return {
+      id: user.id,
+      wallet: user.wallet,
+      username: user.username,
+      avatar: user.avatar,
+      referral_code: user.referral_code,
+      user_level: user.user_level,
+      risk_score: user.risk_score,
+      status: user.status,
+    };
   }
 
   private generateReferralCode(): string {

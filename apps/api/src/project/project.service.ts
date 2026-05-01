@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -52,12 +52,11 @@ export class ProjectService {
     return project;
   }
 
-  async create(data: {
+  async create(ownerUserId: string, data: {
     name: string;
     website?: string;
     logo?: string;
     description?: string;
-    owner_user_id: string;
     twitter?: string;
     telegram?: string;
     discord?: string;
@@ -65,10 +64,53 @@ export class ProjectService {
     return this.prisma.project.create({
       data: {
         ...data,
+        owner_user_id: ownerUserId,
         verification_status: 'pending',
         risk_level: 'low',
+        project_members: {
+          create: { user_id: ownerUserId, role: 'owner' },
+        },
       },
     });
+  }
+
+
+  async assertProjectMember(projectId: string, userId: string, roles: string[] = ['owner', 'admin']) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { owner_user_id: true },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+    if (project.owner_user_id === userId && roles.includes('owner')) return;
+    const member = await this.prisma.projectMember.findUnique({
+      where: { project_id_user_id: { project_id: projectId, user_id: userId } },
+    });
+    if (!member || !roles.includes(member.role)) {
+      throw new ForbiddenException('Project permission required');
+    }
+  }
+
+  async updateForUser(projectId: string, userId: string, data: Partial<{
+    name: string;
+    website: string;
+    logo: string;
+    description: string;
+    twitter: string;
+    telegram: string;
+    discord: string;
+  }>) {
+    await this.assertProjectMember(projectId, userId);
+    return this.update(projectId, data);
+  }
+
+  async submitForReviewForUser(projectId: string, userId: string) {
+    await this.assertProjectMember(projectId, userId);
+    return this.submitForReview(projectId);
+  }
+
+  async getDashboardForUser(projectId: string, userId: string) {
+    await this.assertProjectMember(projectId, userId, ['owner', 'admin', 'viewer']);
+    return this.getDashboard(projectId);
   }
 
   async update(projectId: string, data: Partial<{

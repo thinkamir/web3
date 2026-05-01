@@ -9,7 +9,7 @@ export class RiskService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
-        referrals: true,
+        referrals_sent: true,
         task_submissions: {
           where: { status: 'completed' },
         },
@@ -24,15 +24,15 @@ export class RiskService {
     let score = 0;
     const factors: any = {};
 
-    if (user.referrals.length > 10) {
+    if (user.referrals_sent.length > 10) {
       score += 20;
-      factors.too_many_referrals = true;
+      factors.too_many_referrals_sent = true;
     }
 
-    const suspiciousReferrals = user.referrals.filter(r => r.status === 'flagged');
+    const suspiciousReferrals = user.referrals_sent.filter(r => r.status === 'flagged');
     if (suspiciousReferrals.length > 0) {
       score += suspiciousReferrals.length * 10;
-      factors.suspicious_referrals = suspiciousReferrals.length;
+      factors.suspicious_referrals_sent = suspiciousReferrals.length;
     }
 
     const submissionsPerTask = new Map<string, number>();
@@ -103,7 +103,7 @@ export class RiskService {
   async evaluateReferral(referrerId: string, inviteeId: string): Promise<{ risk_score: number; action: string }> {
     const referrer = await this.prisma.user.findUnique({
       where: { id: referrerId },
-      include: { referrals: true },
+      include: { referrals_sent: true },
     });
 
     if (!referrer) {
@@ -112,7 +112,7 @@ export class RiskService {
 
     let score = 0;
 
-    const sameDeviceInvites = referrer.referrals.filter(r =>
+    const sameDeviceInvites = referrer.referrals_sent.filter(r =>
       r.invitee_id !== inviteeId &&
       r.status === 'flagged'
     ).length;
@@ -121,7 +121,7 @@ export class RiskService {
       score += sameDeviceInvites * 15;
     }
 
-    if (referrer.referrals.length > 50) {
+    if (referrer.referrals_sent.length > 50) {
       score += 25;
     }
 

@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ApiService } from './api.service';
 
@@ -8,6 +9,7 @@ export class HmacGuard {
   async validate(
     headers: {
       'x-aq-key'?: string;
+      'x-aq-secret'?: string;
       'x-aq-timestamp'?: string;
       'x-aq-nonce'?: string;
       'x-aq-signature'?: string;
@@ -17,19 +19,20 @@ export class HmacGuard {
     body: string,
   ) {
     const keyId = headers['x-aq-key'];
+    const secret = headers['x-aq-secret'];
     const timestamp = parseInt(headers['x-aq-timestamp'] || '0', 10);
     const nonce = headers['x-aq-nonce'];
     const signature = headers['x-aq-signature'];
 
-    if (!keyId || !timestamp || !nonce || !signature) {
+    if (!keyId || !secret || !timestamp || !nonce || !signature) {
       throw new UnauthorizedException('Missing authentication headers');
     }
 
-    const bodyHash = body ? require('crypto').createHash('sha256').update(body).digest('hex') : '';
+    const bodyHash = body ? createHash('sha256').update(body).digest('hex') : '';
 
     const apiKey = await this.apiService.validateApiKey(
       keyId,
-      '',
+      secret,
       timestamp,
       nonce,
       signature,

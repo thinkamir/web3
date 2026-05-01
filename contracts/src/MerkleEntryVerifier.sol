@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./PrizeVault.sol";
 
-abstract contract MerkleEntryVerifier is AccessControl {
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-
+abstract contract MerkleEntryVerifier {
     PrizeVault public prizeVault;
 
     mapping(uint256 => mapping(bytes32 => bool)) public merkleProofs;
@@ -18,8 +15,6 @@ abstract contract MerkleEntryVerifier is AccessControl {
 
     constructor(address _prizeVault) {
         prizeVault = PrizeVault(_prizeVault);
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(OPERATOR_ROLE, msg.sender);
     }
 
     function addMerkleLeaf(
