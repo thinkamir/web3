@@ -1,5 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+
+type CampaignMutation = {
+  title?: string;
+  description?: string;
+  status?: string;
+  start_time?: Date;
+  end_time?: Date;
+  region_restriction?: string[];
+  risk_level?: string;
+  reward_config?: any;
+  risk_config?: any;
+  terms?: string;
+};
 
 @Injectable()
 export class CampaignService {
@@ -31,8 +44,8 @@ export class CampaignService {
           select: { tasks: true, draws: true },
         },
       },
-      take: filters.limit || 50,
-      skip: filters.offset || 0,
+      take: Number(filters.limit) || 50,
+      skip: Number(filters.offset) || 0,
       orderBy: { created_at: 'desc' },
     });
   }
@@ -70,6 +83,47 @@ export class CampaignService {
     return campaign;
   }
 
+  private async assertProjectMember(projectId: string, userId: string, roles: string[] = ['owner', 'admin']) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { owner_user_id: true },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+    if (project.owner_user_id === userId && roles.includes('owner')) return;
+
+    const member = await this.prisma.projectMember.findUnique({
+      where: { project_id_user_id: { project_id: projectId, user_id: userId } },
+    });
+    if (!member || !roles.includes(member.role)) {
+      throw new ForbiddenException('Project permission required');
+    }
+  }
+
+  private async assertCampaignMember(campaignId: string, userId: string, roles: string[] = ['owner', 'admin']) {
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id: campaignId },
+      select: { project_id: true },
+    });
+    if (!campaign) throw new NotFoundException('Campaign not found');
+    await this.assertProjectMember(campaign.project_id, userId, roles);
+  }
+
+  async createForUser(userId: string, data: {
+    project_id: string;
+    title: string;
+    description: string;
+    start_time: Date;
+    end_time: Date;
+    region_restriction?: string[];
+    risk_level?: string;
+    reward_config?: any;
+    risk_config?: any;
+    terms?: string;
+  }) {
+    await this.assertProjectMember(data.project_id, userId);
+    return this.create(data);
+  }
+
   async create(data: {
     project_id: string;
     title: string;
@@ -95,18 +149,12 @@ export class CampaignService {
     });
   }
 
-  async update(campaignId: string, data: Partial<{
-    title: string;
-    description: string;
-    status: string;
-    start_time: Date;
-    end_time: Date;
-    region_restriction: string[];
-    risk_level: string;
-    reward_config: any;
-    risk_config: any;
-    terms: string;
-  }>) {
+  async updateForUser(campaignId: string, userId: string, data: CampaignMutation) {
+    await this.assertCampaignMember(campaignId, userId);
+    return this.update(campaignId, data);
+  }
+
+  async update(campaignId: string, data: CampaignMutation) {
     return this.prisma.campaign.update({
       where: { id: campaignId },
       data,
@@ -116,6 +164,11 @@ export class CampaignService {
         },
       },
     });
+  }
+
+  async submitForReviewForUser(campaignId: string, userId: string) {
+    await this.assertCampaignMember(campaignId, userId);
+    return this.submitForReview(campaignId);
   }
 
   async submitForReview(campaignId: string) {
@@ -138,6 +191,11 @@ export class CampaignService {
       where: { id: campaignId },
       data: { status: 'open' },
     });
+  }
+
+  async getAnalyticsForUser(campaignId: string, userId: string) {
+    await this.assertCampaignMember(campaignId, userId, ['owner', 'admin', 'viewer']);
+    return this.getAnalytics(campaignId);
   }
 
   async getAnalytics(campaignId: string) {

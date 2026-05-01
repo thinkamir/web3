@@ -1,13 +1,13 @@
-{
-  "solidity": "0.8.20",
-  "settings": {
-    "optimizer": {
-      "enabled": true,
-      "runs": 200
-    },
-    "remappings": [
-      "@foundry-rs/forge-std/=lib/forge-std/",
-      "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
-    ]
-  }
-}
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+libs = ["node_modules"]
+solc_version = "0.8.20"
+optimizer = true
+optimizer_runs = 200
+remappings = [
+  "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/",
+  "@foundry-rs/forge-std/=node_modules/forge-std/src/",
+  "forge-std/=node_modules/forge-std/src/"
+]

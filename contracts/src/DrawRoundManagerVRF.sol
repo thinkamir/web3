@@ -18,10 +18,11 @@ interface IVRFCoordinator {
     ) external returns (uint256 requestId);
 }
 
-contract DrawRoundManager is AccessControl, Pausable, ReentrancyGuard, MerkleEntryVerifier {
+contract DrawRoundManagerVRF is AccessControl, Pausable, ReentrancyGuard, MerkleEntryVerifier {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant ROUND_CREATOR_ROLE = keccak256("ROUND_CREATOR_ROLE");
     bytes32 public constant TREASURY_ROLE = keccak256("TREASURY_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     IVRFCoordinator public vrfCoordinator;
     bytes32 public vrfKeyHash;
@@ -163,7 +164,9 @@ contract DrawRoundManager is AccessControl, Pausable, ReentrancyGuard, MerkleEnt
     function claimPrize(uint256 roundId, address claimant, bytes32[] calldata proof) external nonReentrant {
         require(rounds[roundId].status == RoundStatus.Finalized, "Round not finalized");
         require(!hasClaimed[roundId][claimant], "Already claimed");
-        require(prizeVault.prizes(rounds[roundId].prizeId).locked, "Prize not locked");
+        bytes32 prizeId = bytes32(rounds[roundId].prizeId);
+        (, , , , , bool locked, ) = prizeVault.prizes(prizeId);
+        require(locked, "Prize not locked");
 
         uint256 userStartTicket = userTickets[roundId][claimant];
         uint256 userEndTicket = userStartTicket + rounds[roundId].maxPerUser - 1;
@@ -174,7 +177,7 @@ contract DrawRoundManager is AccessControl, Pausable, ReentrancyGuard, MerkleEnt
         );
 
         hasClaimed[roundId][claimant] = true;
-        prizeVault.releasePrizeToWinner(rounds[roundId].prizeId, claimant);
+        prizeVault.releasePrizeToWinner(prizeId, claimant);
 
         emit PrizeClaimed(roundId, claimant);
     }

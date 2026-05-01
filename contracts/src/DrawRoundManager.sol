@@ -9,6 +9,7 @@ import "./MerkleEntryVerifier.sol";
 contract DrawRoundManager is AccessControl, Pausable, ReentrancyGuard, MerkleEntryVerifier {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant ROUND_CREATOR_ROLE = keccak256("ROUND_CREATOR_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     enum RoundStatus {
         Created,

@@ -37,3 +37,4 @@ coverage/
 
 # Build artifacts
 *.tgz
+*.tsbuildinfo

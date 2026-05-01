@@ -1,6 +1,10 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
+import { CurrentUser, JwtUser } from '../common/decorators/current-user.decorator';
+import { AdminGuard } from '../common/guards/admin.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { AdminUpdateProjectDto, CreateProjectDto, RejectProjectDto, UpdateProjectDto } from './dto/project.dto';
 
 @ApiTags('Projects')
 @Controller('projects')
@@ -25,49 +29,35 @@ export class ProjectController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new project' })
-  async create(@Body() data: {
-    name: string;
-    website?: string;
-    logo?: string;
-    description?: string;
-    owner_user_id: string;
-    twitter?: string;
-    telegram?: string;
-    discord?: string;
-  }) {
-    return this.projectService.create(data);
+  async create(@CurrentUser() user: JwtUser, @Body() data: CreateProjectDto) {
+    return this.projectService.create(user.userId, data);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update project' })
   async update(
+    @CurrentUser() user: JwtUser,
     @Param('id') id: string,
-    @Body() data: Partial<{
-      name: string;
-      website: string;
-      logo: string;
-      description: string;
-      twitter: string;
-      telegram: string;
-      discord: string;
-      verification_status: string;
-      risk_level: string;
-    }>,
+    @Body() data: UpdateProjectDto,
   ) {
-    return this.projectService.update(id, data);
+    return this.projectService.updateForUser(id, user.userId, data);
   }
 
   @Post(':id/submit-review')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Submit project for review' })
-  async submitReview(@Param('id') id: string) {
-    return this.projectService.submitForReview(id);
+  async submitReview(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+    return this.projectService.submitForReviewForUser(id, user.userId);
   }
 
   @Post(':id/verify')
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Verify project (admin)' })
   async verify(@Param('id') id: string) {
@@ -75,16 +65,18 @@ export class ProjectController {
   }
 
   @Post(':id/reject')
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Reject project (admin)' })
-  async reject(@Param('id') id: string, @Body() body: { reason?: string }) {
+  async reject(@Param('id') id: string, @Body() body: RejectProjectDto) {
     return this.projectService.reject(id, body.reason);
   }
 
   @Get(':id/dashboard')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get project dashboard data' })
-  async getDashboard(@Param('id') id: string) {
-    return this.projectService.getDashboard(id);
+  async getDashboard(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+    return this.projectService.getDashboardForUser(id, user.userId);
   }
 }

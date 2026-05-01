@@ -68,7 +68,7 @@ export class UserService {
           where: { status: 'completed' },
         },
         draw_entries: true,
-        referrals: true,
+        referrals_sent: true,
       },
     });
 
@@ -84,7 +84,7 @@ export class UserService {
     return {
       tasks_completed: user.task_submissions.length,
       draws_joined: user.draw_entries.length,
-      referrals_count: user.referrals.length,
+      referrals_sent_count: user.referrals_sent.length,
       total_points: pointsBalance._sum.amount || 0,
     };
   }

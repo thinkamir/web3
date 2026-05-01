@@ -1,6 +1,9 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CampaignService } from './campaign.service';
+import { CurrentUser, JwtUser } from '../common/decorators/current-user.decorator';
+import { AdminGuard } from '../common/guards/admin.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @ApiTags('Campaigns')
 @Controller('campaigns')
@@ -25,9 +28,10 @@ export class CampaignController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new campaign' })
-  async create(@Body() data: {
+  async create(@CurrentUser() user: JwtUser, @Body() data: {
     project_id: string;
     title: string;
     description: string;
@@ -39,13 +43,15 @@ export class CampaignController {
     risk_config?: any;
     terms?: string;
   }) {
-    return this.campaignService.create(data);
+    return this.campaignService.createForUser(user.userId, data);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update campaign' })
   async update(
+    @CurrentUser() user: JwtUser,
     @Param('id') id: string,
     @Body() data: Partial<{
       title: string;
@@ -60,27 +66,30 @@ export class CampaignController {
       terms: string;
     }>,
   ) {
-    return this.campaignService.update(id, data);
+    return this.campaignService.updateForUser(id, user.userId, data);
   }
 
   @Post(':id/submit-review')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Submit campaign for review' })
-  async submitReview(@Param('id') id: string) {
-    return this.campaignService.submitForReview(id);
+  async submitReview(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+    return this.campaignService.submitForReviewForUser(id, user.userId);
   }
 
   @Post(':id/publish')
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Publish campaign' })
+  @ApiOperation({ summary: 'Publish campaign (admin)' })
   async publish(@Param('id') id: string) {
     return this.campaignService.publish(id);
   }
 
   @Get(':id/analytics')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get campaign analytics' })
-  async getAnalytics(@Param('id') id: string) {
-    return this.campaignService.getAnalytics(id);
+  async getAnalytics(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+    return this.campaignService.getAnalyticsForUser(id, user.userId);
   }
 }

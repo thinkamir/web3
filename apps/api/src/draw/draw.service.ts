@@ -172,8 +172,8 @@ export class DrawService {
     });
 
     const leaves = entries.map(entry =>
-      ethers.utils.solidityKeccak256(
-        ['address', 'uint256', 'uint256'],
+      ethers.solidityPackedKeccak256(
+        ['string', 'uint256', 'uint256'],
         [entry.user_id, entry.start_ticket, entry.end_ticket],
       ),
     );
@@ -288,7 +288,12 @@ export class DrawService {
       throw new BadRequestException('Prize already claimed');
     }
 
-    if (draw.winning_ticket < entry.start_ticket || draw.winning_ticket > entry.end_ticket) {
+    const winningTicket = draw.winning_ticket;
+    if (winningTicket === null || winningTicket === undefined) {
+      throw new BadRequestException('Draw winning ticket is not available');
+    }
+
+    if (winningTicket < entry.start_ticket || winningTicket > entry.end_ticket) {
       throw new BadRequestException('Not a winner');
     }
 
@@ -339,18 +344,18 @@ export class DrawService {
   }
 
   private computeMerkleRoot(leaves: string[]): string {
-    if (leaves.length === 0) return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(''));
+    if (leaves.length === 0) return ethers.keccak256(ethers.toUtf8Bytes(''));
     if (leaves.length === 1) return leaves[0];
 
     const currentLevel = leaves;
-    let nextLevel: string[] = [];
+    const nextLevel: string[] = [];
 
     for (let i = 0; i < currentLevel.length; i += 2) {
       if (i + 1 < currentLevel.length) {
         nextLevel.push(
-          ethers.utils.lexicographicKeccak256(
-            [currentLevel[i], currentLevel[i + 1]],
+          ethers.solidityPackedKeccak256(
             ['bytes32', 'bytes32'],
+            [currentLevel[i], currentLevel[i + 1]],
           ),
         );
       } else {

@@ -30,13 +30,33 @@ model User {
   task_submissions   TaskSubmission[]
   draw_entries       DrawEntry[]
   draw_claims        DrawClaim[]
-  referrals          Referral[]
+  referrals_sent     Referral[] @relation("ReferrerReferrals")
+  referrals_received Referral[] @relation("InviteeReferrals")
+  owned_projects     Project[]
   api_keys           ApiKey[]
   project_members    ProjectMember[]
+  auth_nonces        AuthNonce[]
 
   @@index([wallet])
   @@index([referral_code])
   @@index([inviter_id])
+}
+
+model AuthNonce {
+  id          String    @id @default(uuid())
+  user_id     String
+  user        User      @relation(fields: [user_id], references: [id])
+  wallet      String    @db.VarChar(42)
+  nonce       String    @unique @db.VarChar(128)
+  domain      String    @db.VarChar(255)
+  message     String    @db.Text
+  expires_at  DateTime
+  consumed_at DateTime?
+  created_at  DateTime  @default(now())
+
+  @@index([user_id])
+  @@index([wallet])
+  @@index([expires_at])
 }
 
 model Project {
@@ -55,8 +75,9 @@ model Project {
   created_at           DateTime @default(now())
   updated_at           DateTime @updatedAt
 
-  campaigns    Campaign[]
+  campaigns       Campaign[]
   project_members ProjectMember[]
+  api_keys        ApiKey[]
 
   @@index([owner_user_id])
   @@index([verification_status])
@@ -168,9 +189,9 @@ model PointTransaction {
 model Referral {
   id            String   @id @default(uuid())
   referrer_id   String
-  referrer      User     @relation(fields: [referrer_id], references: [id])
+  referrer      User     @relation("ReferrerReferrals", fields: [referrer_id], references: [id])
   invitee_id    String
-  invitee       User     @relation(fields: [invitee_id], references: [id])
+  invitee       User     @relation("InviteeReferrals", fields: [invitee_id], references: [id])
   referral_type String   @db.VarChar(30)
   reward_amount Int      @default(0) @db.Integer
   status        String   @default("pending") @db.VarChar(20)
